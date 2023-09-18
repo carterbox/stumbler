@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:location/location.dart';
 
 Stream<LocationData?> streamLocationData(ref) async* {
-  Location location = Location();
+  final location = Location();
 
   bool serviceEnabled;
   PermissionStatus permissionGranted;
@@ -26,8 +26,8 @@ Stream<LocationData?> streamLocationData(ref) async* {
 
   location.changeSettings(
     accuracy: LocationAccuracy.high,
-    distanceFilter: 10, // meters
-    interval: 6000, // milliseconds
+    distanceFilter: 5, // meters
+    interval: 6 * 1000, // milliseconds
   );
 
   await for (final result in location.onLocationChanged) {
@@ -48,19 +48,27 @@ class LocationCard extends ConsumerWidget {
       error: (error, stackTrace) => Text(error.toString()),
       data: (LocationData? location) {
         String locationName;
+        String timestamp;
 
         if (location == null) {
           locationName = 'Nowhere';
+          timestamp = '';
         } else {
           locationName = '${location.latitude}, ${location.longitude}';
+          timestamp = '${DateTime.fromMillisecondsSinceEpoch(location.time!.toInt())}';
         }
 
-        return Center(
-          child: Card(
-            child: SizedBox(
-              width: 300,
-              height: 100,
-              child: Center(child: Text(locationName)),
+        return Card(
+          child: SizedBox(
+            height: 100,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(locationName),
+                  Text(timestamp),
+                ],
+              ),
             ),
           ),
         );
