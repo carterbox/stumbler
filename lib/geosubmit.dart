@@ -49,6 +49,27 @@ class Report {
           return element.toJson();
         }).toList(),
       };
+
+  Report.fromJson(Map<String, dynamic> object)
+      : timestamp = object['timestamp'],
+        position = Position.fromJson(object['position']),
+        wifiAccessPoints = object['wifiAccessPoints'].map((element) {
+          return WifiAccessPoint.fromJson(element);
+        }).toList();
+
+  Map<String, dynamic> toSQLiteRow() => {
+        'timestamp': timestamp,
+        'position': jsonEncode(position),
+        'wifiAccessPoints': jsonEncode(wifiAccessPoints),
+      };
+
+  Report.fromSQLiteRow(Map<String, dynamic> object)
+      : timestamp = object['timestamp'],
+        position = Position.fromJson(jsonDecode(object['position'])),
+        wifiAccessPoints =
+            jsonDecode(object['wifiAccessPoints']).map((element) {
+          return WifiAccessPoint.fromJson(element);
+        }).toList();
 }
 
 /// Contains information about where and when the data was observed.
@@ -128,6 +149,18 @@ class Position {
         if (age != null) 'age': age,
         if (source != null && source!.isNotEmpty) 'source': source,
       };
+
+  Position.fromJson(Map<String, dynamic> object)
+      : latitude = object['latitide'],
+        longitude = object['longitude'],
+        accuracy = object['accuracy'],
+        altitude = object['altitude'],
+        altitudeAccuracy = object['altitudeAccuracy'],
+        heading = object['heading'],
+        pressure = object['pressure'],
+        speed = object['speed'],
+        age = object['age'],
+        source = object['source'];
 }
 
 /// Contains information about a WIFI network
@@ -136,7 +169,7 @@ class WifiAccessPoint {
   /// The BSSID of the Wifi network.
   ///
   /// Hidden Wifi networks must not be collected.
-  final String macAddess;
+  final String macAddress;
 
   /// The number of milliseconds since this Wifi network was detected.
   final int? age;
@@ -147,13 +180,13 @@ class WifiAccessPoint {
 
   /// The frequency in MHz of the channel over which the client is communicating
   /// with the access point.
-  final int? fequency;
+  final int? frequency;
 
   /// The Wifi radio type; one of 802.11a, 802.11b, 802.11g, 802.11n, 802.11ac.
   final String? radioType;
 
   /// The current signal to noise ratio measured in dB.
-  final int? signaltToNoiseRatio;
+  final int? signalToNoiseRatio;
 
   /// The received signal strength (RSSI) in dBm.
   final int? signalStrength;
@@ -172,13 +205,13 @@ class WifiAccessPoint {
   };
 
   WifiAccessPoint({
-    required this.macAddess,
+    required this.macAddress,
     this.age,
     this.channel,
-    this.fequency,
+    this.frequency,
     this.radioType,
     this.signalStrength,
-    this.signaltToNoiseRatio,
+    this.signalToNoiseRatio,
     this.ssid,
   }) {
     if (radioType != null && !validRadioType.contains(radioType!)) {
@@ -189,17 +222,27 @@ class WifiAccessPoint {
   Map<String, dynamic> toJson() {
     if (ssid != null && ssid!.isNotEmpty && !ssid!.endsWith('_nomap')) {
       return {
-        'macAddress': macAddess,
+        'macAddress': macAddress,
         if (age != null) 'age': age,
         if (channel != null) 'channel': channel,
-        if (fequency != null) 'fequency': fequency,
+        if (frequency != null) 'frequency': frequency,
         if (radioType != null && radioType!.isNotEmpty) 'radioType': radioType,
         if (signalStrength != null) 'signalStrength': signalStrength,
-        if (signaltToNoiseRatio != null)
-          'signaltToNoiseRatio': signaltToNoiseRatio,
+        if (signalToNoiseRatio != null)
+          'signalToNoiseRatio': signalToNoiseRatio,
         'ssid': ssid,
       };
     }
     return {};
   }
+
+  WifiAccessPoint.fromJson(Map<String, dynamic> object)
+      : macAddress = object['macAddress'],
+        age = object['age'],
+        channel = object['channel'],
+        frequency = object['frequency'],
+        radioType = object['radioType'],
+        signalStrength = object['signalStrength'],
+        signalToNoiseRatio = object['signalToNoiseRatio'],
+        ssid = object['ssid'];
 }
