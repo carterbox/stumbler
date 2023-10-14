@@ -1,6 +1,7 @@
 /// Classes and functions for submitting data to the Mozilla Location Service.
 
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
@@ -70,16 +71,22 @@ class Report {
             jsonDecode(object['wifiAccessPoints']).map((element) {
           return WifiAccessPoint.fromJson(element);
         }).toList();
+
+  Report.fromMock()
+      : timestamp = DateTime.now().millisecondsSinceEpoch,
+        position = Position.fromMock(),
+        wifiAccessPoints = List<WifiAccessPoint>.generate(
+            Random().nextInt(10) + 1, (index) => WifiAccessPoint.fromMock());
 }
 
 /// Contains information about where and when the data was observed.
 @immutable
 class Position {
   /// The latitude of the observation (WSG 84).
-  final int latitude;
+  final double latitude;
 
   /// The longitude of the observation (WSG 84).
-  final int longitude;
+  final double longitude;
 
   /// The accuracy of the observed position in meters.
   final double? accuracy;
@@ -161,6 +168,18 @@ class Position {
         speed = object['speed'],
         age = object['age'],
         source = object['source'];
+
+  Position.fromMock()
+      : latitude = (Random().nextDouble() * 180) - 90,
+        longitude = (Random().nextDouble() * 360) - 180,
+        accuracy = null,
+        altitude = null,
+        altitudeAccuracy = null,
+        heading = null,
+        pressure = null,
+        speed = null,
+        age = null,
+        source = null;
 }
 
 /// Contains information about a WIFI network
@@ -245,4 +264,20 @@ class WifiAccessPoint {
         signalStrength = object['signalStrength'],
         signalToNoiseRatio = object['signalToNoiseRatio'],
         ssid = object['ssid'];
+
+  WifiAccessPoint.fromMock()
+      : macAddress =
+            ('${Random().nextInt(256).toRadixString(16).toUpperCase()}:'
+                '${Random().nextInt(256).toRadixString(16).toUpperCase()}:'
+                '${Random().nextInt(256).toRadixString(16).toUpperCase()}:'
+                '${Random().nextInt(256).toRadixString(16).toUpperCase()}:'
+                '${Random().nextInt(256).toRadixString(16).toUpperCase()}:'
+                '${Random().nextInt(256).toRadixString(16).toUpperCase()}'),
+        age = null,
+        channel = null,
+        frequency = null,
+        radioType = '802.11a',
+        signalStrength = null,
+        signalToNoiseRatio = null,
+        ssid = 'mock_nomap';
 }
