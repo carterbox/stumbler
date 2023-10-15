@@ -126,7 +126,6 @@ Stream<LocationData?> streamLocationData(ref) async* {
 
 Stream<List<Report>> streamMockWifiReports(ref) async* {
   List<Report> reports = [];
-  yield reports;
   while (true) {
     await Future.delayed(Duration(seconds: Random().nextInt(90)));
     reports.add(Report.fromMock());

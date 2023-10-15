@@ -62,7 +62,7 @@ class ReportListView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final reports = ref.watch(reportProvider);
     return reports.when(
-      loading: () => const Placeholder(), //const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stackTrace) => Text(error.toString()),
       data: (List<Report> reports) {
         return ListView.builder(
