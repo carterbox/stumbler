@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mozumbler/geosubmit.dart';
 import 'package:mozumbler/service.dart';
+import 'package:logging/logging.dart';
 
 Future<void> main() async {
+  Logger.root.onRecord.listen((record) {
+    debugPrint('${record.level.name}: ${record.time}: ${record.message}');
+  });
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const ProviderScope(child: MyApp()));
   // await initializeService();
@@ -63,7 +67,15 @@ class ReportListView extends ConsumerWidget {
     final reports = ref.watch(reportProvider);
     return reports.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) => Text(error.toString()),
+      error: (error, stackTrace) => Align(
+        alignment: Alignment.topCenter,
+        child: Card(
+          child: ListTile(
+            leading: const Icon(Icons.error),
+            title: Text(error.toString()),
+          ),
+        ),
+      ),
       data: (List<Report> reports) {
         return ListView.builder(
           itemCount: reports.length,
@@ -178,8 +190,8 @@ class APList extends ConsumerWidget {
       itemBuilder: (context, index) {
         return Card(
           child: ListTile(
-            title: Text(accessPoints[index].ssid != null &&
-                    accessPoints[index].ssid!.isNotEmpty
+            title: Text((accessPoints[index].ssid != null &&
+                    accessPoints[index].ssid!.isNotEmpty)
                 ? accessPoints[index].ssid!
                 : '[Hidden Network]'),
             subtitle: Text(
