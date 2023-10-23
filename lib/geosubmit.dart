@@ -228,8 +228,6 @@ class Position {
 @immutable
 class WifiAccessPoint {
   /// The BSSID of the Wifi network.
-  ///
-  /// Hidden Wifi networks must not be collected.
   final String macAddress;
 
   /// The number of milliseconds since this Wifi network was detected.
@@ -254,6 +252,7 @@ class WifiAccessPoint {
 
   /// The SSID of the Wifi network.
   ///
+  /// Hidden Wifi networks must not be collected.
   /// Wifi networks with a SSID ending in '_nomap' must not be collected.
   final String? ssid;
 
@@ -262,7 +261,8 @@ class WifiAccessPoint {
     '802.11b',
     '802.11g',
     '802.11n',
-    '802.11ac'
+    '802.11ac',
+    '802.11ax', // Adding this newer standard because it exists
   };
 
   WifiAccessPoint({
@@ -276,7 +276,7 @@ class WifiAccessPoint {
     this.ssid,
   }) {
     if (radioType != null && !validRadioType.contains(radioType!)) {
-      throw Exception('WifiAccessPoint radioType invalid!');
+      throw Exception('WifiAccessPoint radioType $radioType is invalid!');
     }
   }
 
