@@ -13,7 +13,7 @@ Future<void> main() async {
   // await initializeService();
 }
 
-final reportProvider = StreamProvider<List<Report>>(streamMockWifiReports);
+final reportProvider = StreamProvider<List<Report>>(streamWifiReports);
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
