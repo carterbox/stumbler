@@ -1,15 +1,11 @@
 import 'dart:async';
 import 'dart:math';
-// import 'package:flutter_background_service/flutter_background_service.dart';
-// import 'package:flutter_background_service_android/flutter_background_service_android.dart';
-// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-// import 'package:flutter/material.dart';
-import 'package:wifi_scan/wifi_scan.dart';
-import 'package:logging/logging.dart' as logging;
 import 'package:location/location.dart';
+import 'package:logging/logging.dart' as logging;
 import 'package:mozumbler/geosubmit.dart' as mls;
 import 'package:system_clock/system_clock.dart';
+import 'package:wifi_scan/wifi_scan.dart';
 
 final _logger = logging.Logger('mozumbler.service');
 
@@ -18,44 +14,6 @@ const notificationChannelId = 'mozumbler';
 
 // this will be used for notification id, So you can update your custom notification with this id.
 const notificationId = 000;
-
-// Future<void> initializeService() async {
-//   final service = FlutterBackgroundService();
-
-//   const AndroidNotificationChannel channel = AndroidNotificationChannel(
-//     notificationChannelId, // id
-//     'Stumbling Activity', // title
-//     description: 'Whether the stumbling is currently active.', // description
-//     importance: Importance.low, // importance must be at low or higher level
-//   );
-
-//   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-//       FlutterLocalNotificationsPlugin();
-
-//   await flutterLocalNotificationsPlugin
-//       .resolvePlatformSpecificImplementation<
-//           AndroidFlutterLocalNotificationsPlugin>()
-//       ?.createNotificationChannel(channel);
-
-//   await service.configure(
-//     androidConfiguration: AndroidConfiguration(
-//       // this will be executed when app is in foreground or background in separated isolate
-//       onStart: onStart,
-
-//       // auto start service
-//       autoStart: true,
-//       autoStartOnBoot: false,
-//       isForegroundMode: false,
-
-//       notificationChannelId:
-//           notificationChannelId, // this must match with notification channel you created above.
-//       // initialNotificationTitle: 'Mozumbler',
-//       initialNotificationContent: 'Initializing Mozumbler',
-//       foregroundServiceNotificationId: notificationId,
-//     ),
-//     iosConfiguration: IosConfiguration(),
-//   );
-// }
 
 // @pragma('vm:entry-point')
 // Future<void> onStart(ServiceInstance service) async {
@@ -68,7 +26,7 @@ const notificationId = 000;
 //   // bring to foreground
 //   Timer.periodic(const Duration(seconds: 6), (timer) async {
 //     if (service is AndroidServiceInstance) {
-//       if (true) {
+//       if (await service.isForegroundService()) {
 //         flutterLocalNotificationsPlugin.show(
 //           notificationId,
 //           'Mozumbler is active',

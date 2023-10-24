@@ -10,7 +10,6 @@ Future<void> main() async {
   });
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const ProviderScope(child: MyApp()));
-  // await initializeService();
 }
 
 final reportProvider = StreamProvider<List<Report>>(streamWifiReports);

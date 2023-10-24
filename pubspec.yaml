@@ -40,12 +40,10 @@ dependencies:
   flutter_riverpod: ^2.4.0
   system_clock: ^2.0.0
   geocoding: ^2.1.0
-  flutter_background_service: ^5.0.1
-  flutter_local_notifications: ^15.1.1
-  flutter_background_service_android: ^6.0.1
   http: ^1.1.0
   logging: ^1.2.0
   sqflite: ^2.3.0
+  workmanager: ^0.5.2
 
 dev_dependencies:
   flutter_test:
@@ -56,7 +54,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^2.0.0
+  flutter_lints: ^3.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
