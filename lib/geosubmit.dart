@@ -1,4 +1,5 @@
 /// Classes and functions for submitting data to the Mozilla Location Service.
+library;
 
 import 'dart:convert';
 import 'dart:math';
@@ -10,17 +11,6 @@ import 'package:sqflite/sqflite.dart';
 
 final log = Logger('geosubmit');
 
-var _database = openDatabase(
-  'geosubmit.db',
-  version: 0,
-  onCreate: (db, version) {
-    // Run the CREATE TABLE statement on the database.
-    return db.execute(
-      'CREATE TABLE reports(timestamp INTEGER PRIMARY KEY, position TEXT, wifiAccessPoints TEXT)',
-    );
-  },
-);
-
 /// Submit a report to the location service anonymously over https
 void submitReport(Report report) async {
   final url = Uri.https('location.services.mozilla.com', 'v2/geosubmit');
@@ -29,29 +19,62 @@ void submitReport(Report report) async {
   log.fine('geosubmit response body:   ${response.body}');
 }
 
+Future<void> _createDatabaseV1(db, version) {
+  // Run the CREATE TABLE statement on the database.
+  return db.execute(
+    'CREATE TABLE reports(timestamp INTEGER PRIMARY KEY, position TEXT, wifiAccessPoints TEXT)',
+  );
+}
+
 /// Store observations in a local database
-void insertReport(Report report) async {
-  final db = await _database;
-  db.insert(
+Future<void> insertReport(Report report) async {
+  final db = await openDatabase(
+    'geosubmit.db',
+    version: 1,
+    onCreate: _createDatabaseV1,
+  );
+  await db.insert(
     'reports',
     report.toSQLiteRow(),
     conflictAlgorithm: ConflictAlgorithm.ignore,
   );
+  await db.close();
 }
 
 /// Get all of the reports from the database
 Future<List<Report>> fetchReports() async {
-  final db = await _database;
+  if (!await databaseExists(
+    'geosubmit.db',
+  )) {
+    return [];
+  }
+  final db = await openDatabase(
+    'geosubmit.db',
+    version: 1,
+    readOnly: true,
+  );
   final List<Map<String, dynamic>> maps = await db.query('reports');
+  await db.close();
   return maps.map((e) {
     return Report.fromSQLiteRow(e);
-  }).toList();
+  }).toList(growable: false);
+}
+
+Stream<List<Report>> streamReportsfromDatabase(ref) async* {
+  while (true) {
+    yield await fetchReports();
+    await Future.delayed(const Duration(minutes: 10));
+  }
 }
 
 /// Remove a report from the database
 Future<void> deleteReport(int timestamp) async {
   // Get a reference to the database.
-  final db = await _database;
+  final db = await openDatabase(
+    'geosubmit.db',
+    version: 1,
+    onCreate: _createDatabaseV1,
+  );
   await db.delete(
     'reports',
     where: 'timestamp = ?',
