@@ -95,13 +95,24 @@ class ReportListView extends ConsumerWidget {
           onRefresh: () async {
             await ref.read(reportListProvider.notifier).refresh();
           },
-          child: ListView.builder(
-            itemCount: reports.length,
-            prototypeItem: ReportListItem(report: Report.fromMock()),
-            itemBuilder: (context, index) {
-              return ReportListItem(report: reports[index]);
-            },
-          ),
+          child: reports.isNotEmpty
+              ? ListView.builder(
+                  itemCount: reports.length,
+                  prototypeItem: ReportListItem(report: Report.fromMock()),
+                  itemBuilder: (context, index) {
+                    return ReportListItem(report: reports[index]);
+                  },
+                )
+              : ListView(
+                  children: const <Widget>[
+                    Card(
+                      child: ListTile(
+                        leading: Icon(Icons.search_off),
+                        title: Text("No reports available."),
+                      ),
+                    ),
+                  ],
+                ),
         );
       },
     );
@@ -176,7 +187,7 @@ class ReportDetailPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('Stumbling Report Details'),
+        title: const Text('Report Details'),
       ),
       body: Column(
         children: [
