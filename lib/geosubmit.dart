@@ -108,20 +108,32 @@ class Report {
     required this.wifiAccessPoints,
   });
 
+  Report toValid() {
+    return Report(
+        timestamp: timestamp,
+        position: position,
+        wifiAccessPoints: wifiAccessPoints.where((e) {
+          return (e.ssid != null &&
+              e.ssid!.isNotEmpty &&
+              !e.ssid!.endsWith('_nomap'));
+        }).toList(growable: false));
+  }
+
   Map<String, dynamic> toJson() => {
         'timestamp': timestamp,
         'position': position.toJson(),
         'wifiAccessPoints': wifiAccessPoints.map((element) {
           return element.toJson();
-        }).toList(),
+        }).toList(growable: false),
       };
 
   Report.fromJson(Map<String, dynamic> object)
       : timestamp = object['timestamp'],
         position = Position.fromJson(object['position']),
-        wifiAccessPoints = object['wifiAccessPoints'].map((element) {
+        wifiAccessPoints =
+            object['wifiAccessPoints'].map<WifiAccessPoint>((element) {
           return WifiAccessPoint.fromJson(element);
-        }).toList();
+        }).toList(growable: false);
 
   Map<String, dynamic> toSQLiteRow() => {
         'timestamp': timestamp,
@@ -133,15 +145,20 @@ class Report {
       : timestamp = object['timestamp'],
         position = Position.fromJson(jsonDecode(object['position'])),
         wifiAccessPoints =
-            jsonDecode(object['wifiAccessPoints']).map((element) {
+            jsonDecode(object['wifiAccessPoints']).map<WifiAccessPoint>((element) {
           return WifiAccessPoint.fromJson(element);
-        }).toList();
+        }).toList(growable: false);
 
   Report.fromMock()
       : timestamp = DateTime.now().millisecondsSinceEpoch,
         position = Position.fromMock(),
         wifiAccessPoints = List<WifiAccessPoint>.generate(
             Random().nextInt(10) + 1, (index) => WifiAccessPoint.fromMock());
+
+  @override
+  String toString() {
+    return "Report at time $timestamp\n  with position: $position\n  with observations: ${wifiAccessPoints.map((e) => "\n    $e")}";
+  }
 }
 
 /// Contains information about where and when the data was observed.
@@ -223,7 +240,7 @@ class Position {
       };
 
   Position.fromJson(Map<String, dynamic> object)
-      : latitude = object['latitide'],
+      : latitude = object['latitude'],
         longitude = object['longitude'],
         accuracy = object['accuracy'],
         altitude = object['altitude'],
@@ -243,8 +260,13 @@ class Position {
         heading = null,
         pressure = null,
         speed = null,
-        age = null,
+        age = Random().nextBool()? null : Random().nextInt(100) - 50,
         source = null;
+
+  @override
+  String toString() {
+    return "Position @ $latitude, $longitude at time $age";
+  }
 }
 
 /// Contains information about a WIFI network
@@ -304,20 +326,16 @@ class WifiAccessPoint {
   }
 
   Map<String, dynamic> toJson() {
-    if (ssid != null && ssid!.isNotEmpty && !ssid!.endsWith('_nomap')) {
-      return {
-        'macAddress': macAddress,
-        if (age != null) 'age': age,
-        if (channel != null) 'channel': channel,
-        if (frequency != null) 'frequency': frequency,
-        if (radioType != null && radioType!.isNotEmpty) 'radioType': radioType,
-        if (signalStrength != null) 'signalStrength': signalStrength,
-        if (signalToNoiseRatio != null)
-          'signalToNoiseRatio': signalToNoiseRatio,
-        'ssid': ssid,
-      };
-    }
-    return {};
+    return {
+      'macAddress': macAddress,
+      if (age != null) 'age': age,
+      if (channel != null) 'channel': channel,
+      if (frequency != null) 'frequency': frequency,
+      if (radioType != null && radioType!.isNotEmpty) 'radioType': radioType,
+      if (signalStrength != null) 'signalStrength': signalStrength,
+      if (signalToNoiseRatio != null) 'signalToNoiseRatio': signalToNoiseRatio,
+      if (ssid != null) 'ssid': ssid,
+    };
   }
 
   WifiAccessPoint.fromJson(Map<String, dynamic> object)
@@ -338,11 +356,16 @@ class WifiAccessPoint {
                 '${Random().nextInt(256).toRadixString(16).toUpperCase()}:'
                 '${Random().nextInt(256).toRadixString(16).toUpperCase()}:'
                 '${Random().nextInt(256).toRadixString(16).toUpperCase()}'),
-        age = null,
+        age = Random().nextBool()? null : Random().nextInt(100) - 50,
         channel = null,
         frequency = null,
-        radioType = '802.11a',
+        radioType = Random().nextBool()? null : '802.11a',
         signalStrength = null,
         signalToNoiseRatio = null,
-        ssid = 'mock_nomap';
+        ssid = Random().nextBool()? null : 'mock_nomap';
+
+  @override
+  String toString() {
+    return "WifiAccessPoint $macAddress at time $age";
+  }
 }
