@@ -1,25 +1,30 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:mozumbler/geosubmit.dart';
 import 'package:mozumbler/service.dart';
-import 'package:logging/logging.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+// Code generator for riverpod must be running by calling
+//`dart run build_runner watch`; it puts code into this file.
+part 'main.g.dart';
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   Logger.root.onRecord.listen((record) {
     debugPrint('${record.level.name}: ${record.time}: ${record.message}');
   });
-  WidgetsFlutterBinding.ensureInitialized();
+  getLocationAndNetworkPermission();
+  initializeMozumblerService();
   runApp(const ProviderScope(child: MyApp()));
 }
 
-final reportProvider = StreamProvider<List<Report>>(streamWifiReports);
-
-class MyApp extends ConsumerWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   // This widget is the root of your application.
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Mozumbler',
       theme: ThemeData(
@@ -31,24 +36,22 @@ class MyApp extends ConsumerWidget {
   }
 }
 
-class MyHomePage extends ConsumerWidget {
+class MyHomePage extends StatelessWidget {
   const MyHomePage({super.key, required this.title});
 
   final String title;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(title),
       ),
-      body: Column(
+      body: const Column(
         children: [
           Expanded(
-            child: ReportListView(
-              reportProvider: reportProvider,
-            ),
+            child: ReportListView(),
           ),
         ],
       ),
@@ -56,14 +59,26 @@ class MyHomePage extends ConsumerWidget {
   }
 }
 
-class ReportListView extends ConsumerWidget {
-  const ReportListView({super.key, required this.reportProvider});
+@riverpod
+class ReportList extends _$ReportList {
+  @override
+  Future<List<Report>> build() async {
+    return fetchReports();
+  }
 
-  final StreamProvider<List<Report>> reportProvider;
+  Future<void> refresh() async {
+    await insertReport(Report.fromMock());
+    ref.invalidateSelf();
+    await future;
+  }
+}
+
+class ReportListView extends ConsumerWidget {
+  const ReportListView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final reports = ref.watch(reportProvider);
+    final reports = ref.watch(reportListProvider);
     return reports.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stackTrace) => Align(
@@ -76,12 +91,17 @@ class ReportListView extends ConsumerWidget {
         ),
       ),
       data: (List<Report> reports) {
-        return ListView.builder(
-          itemCount: reports.length,
-          prototypeItem: ReportListItem(report: Report.fromMock()),
-          itemBuilder: (context, index) {
-            return ReportListItem(report: reports[index]);
+        return RefreshIndicator(
+          onRefresh: () async {
+            await ref.read(reportListProvider.notifier).refresh();
           },
+          child: ListView.builder(
+            itemCount: reports.length,
+            prototypeItem: ReportListItem(report: Report.fromMock()),
+            itemBuilder: (context, index) {
+              return ReportListItem(report: reports[index]);
+            },
+          ),
         );
       },
     );
@@ -171,13 +191,13 @@ class ReportDetailPage extends StatelessWidget {
   }
 }
 
-class APList extends ConsumerWidget {
+class APList extends StatelessWidget {
   const APList({super.key, required this.accessPoints});
 
   final List<WifiAccessPoint> accessPoints;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return ListView.builder(
       itemCount: accessPoints.length,
       prototypeItem: const Card(
