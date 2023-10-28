@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:mozumbler/geosubmit.dart';
 import 'package:mozumbler/service.dart';
+import 'package:mozumbler/database.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 // Code generator for riverpod must be running by calling
@@ -15,7 +16,7 @@ Future<void> main() async {
     debugPrint('${record.level.name}: ${record.time}: ${record.message}');
   });
   getLocationAndNetworkPermission();
-  initializeMozumblerService();
+  // initializeMozumblerService();
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -67,7 +68,8 @@ class ReportList extends _$ReportList {
   }
 
   Future<void> refresh() async {
-    await insertReport(Report.fromMock());
+    // await insertReport(Report.fromMock());
+    // scheduleSingleReport();
     ref.invalidateSelf();
     await future;
   }
@@ -134,7 +136,6 @@ class ReportListItem extends StatelessWidget {
       clipBehavior: Clip.hardEdge,
       child: InkWell(
           onTap: () {
-            debugPrint('Card tapped.');
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => ReportDetailPage(report: report),

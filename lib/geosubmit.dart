@@ -7,7 +7,6 @@ import 'dart:math';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
-import 'package:sqflite/sqflite.dart';
 
 final log = Logger('geosubmit');
 
@@ -17,69 +16,6 @@ void submitReport(Report report) async {
   final response = await http.post(url, body: jsonEncode(report));
   log.info('geosubmit response status: ${response.statusCode}');
   log.fine('geosubmit response body:   ${response.body}');
-}
-
-Future<void> _createDatabaseV1(db, version) {
-  // Run the CREATE TABLE statement on the database.
-  return db.execute(
-    'CREATE TABLE reports(timestamp INTEGER PRIMARY KEY, position TEXT, wifiAccessPoints TEXT)',
-  );
-}
-
-/// Store observations in a local database
-Future<void> insertReport(Report report) async {
-  final db = await openDatabase(
-    'geosubmit.db',
-    version: 1,
-    onCreate: _createDatabaseV1,
-  );
-  await db.insert(
-    'reports',
-    report.toSQLiteRow(),
-    conflictAlgorithm: ConflictAlgorithm.ignore,
-  );
-  await db.close();
-}
-
-/// Get all of the reports from the database
-Future<List<Report>> fetchReports() async {
-  if (!await databaseExists(
-    'geosubmit.db',
-  )) {
-    return [];
-  }
-  final db = await openDatabase(
-    'geosubmit.db',
-    version: 1,
-    readOnly: true,
-  );
-  final List<Map<String, dynamic>> maps = await db.query('reports');
-  await db.close();
-  return maps.map((e) {
-    return Report.fromSQLiteRow(e);
-  }).toList(growable: false);
-}
-
-Stream<List<Report>> streamReportsfromDatabase(ref) async* {
-  while (true) {
-    yield await fetchReports();
-    await Future.delayed(const Duration(minutes: 10));
-  }
-}
-
-/// Remove a report from the database
-Future<void> deleteReport(int timestamp) async {
-  // Get a reference to the database.
-  final db = await openDatabase(
-    'geosubmit.db',
-    version: 1,
-    onCreate: _createDatabaseV1,
-  );
-  await db.delete(
-    'reports',
-    where: 'timestamp = ?',
-    whereArgs: [timestamp],
-  );
 }
 
 /// A collection of position and beacon data
@@ -144,8 +80,8 @@ class Report {
   Report.fromSQLiteRow(Map<String, dynamic> object)
       : timestamp = object['timestamp'],
         position = Position.fromJson(jsonDecode(object['position'])),
-        wifiAccessPoints =
-            jsonDecode(object['wifiAccessPoints']).map<WifiAccessPoint>((element) {
+        wifiAccessPoints = jsonDecode(object['wifiAccessPoints'])
+            .map<WifiAccessPoint>((element) {
           return WifiAccessPoint.fromJson(element);
         }).toList(growable: false);
 
@@ -260,7 +196,7 @@ class Position {
         heading = null,
         pressure = null,
         speed = null,
-        age = Random().nextBool()? null : Random().nextInt(100) - 50,
+        age = Random().nextBool() ? null : Random().nextInt(100) - 50,
         source = null;
 
   @override
@@ -356,13 +292,13 @@ class WifiAccessPoint {
                 '${Random().nextInt(256).toRadixString(16).toUpperCase()}:'
                 '${Random().nextInt(256).toRadixString(16).toUpperCase()}:'
                 '${Random().nextInt(256).toRadixString(16).toUpperCase()}'),
-        age = Random().nextBool()? null : Random().nextInt(100) - 50,
+        age = Random().nextBool() ? null : Random().nextInt(100) - 50,
         channel = null,
         frequency = null,
-        radioType = Random().nextBool()? null : '802.11a',
+        radioType = Random().nextBool() ? null : '802.11a',
         signalStrength = null,
         signalToNoiseRatio = null,
-        ssid = Random().nextBool()? null : 'mock_nomap';
+        ssid = Random().nextBool() ? null : 'mock_nomap';
 
   @override
   String toString() {
