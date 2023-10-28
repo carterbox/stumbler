@@ -15,8 +15,7 @@ Future<void> main() async {
   Logger.root.onRecord.listen((record) {
     debugPrint('${record.level.name}: ${record.time}: ${record.message}');
   });
-  getLocationAndNetworkPermission();
-  // initializeMozumblerService();
+  // getLocationAndNetworkPermission();
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -29,10 +28,56 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Mozumbler',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+        colorSchemeSeed: Colors.lightGreen,
         useMaterial3: true,
       ),
       home: const MyHomePage(title: 'Mozumbler'),
+    );
+  }
+}
+
+@riverpod
+class StumblerStatus extends _$StumblerStatus {
+  @override
+  Future<bool> build() async {
+    // Add a delay because it takes time for the service to start.
+    await Future.delayed(const Duration(seconds: 1));
+    return isMozumberServiceActive();
+  }
+
+  Future<void> refresh() async {
+    ref.invalidateSelf();
+    await future;
+  }
+}
+
+class StumblerControlButton extends ConsumerWidget {
+  const StumblerControlButton({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stumblerStatus = ref.watch(stumblerStatusProvider);
+    if (stumblerStatus.isRefreshing) return const CircularProgressIndicator();
+    return stumblerStatus.when(
+      data: (bool isRunning) => IconButton.filledTonal(
+        isSelected: isRunning,
+        onPressed: () {
+          if (isRunning) {
+            stopMozumblerService();
+          } else {
+            startMozumblerService();
+          }
+          ref.read(stumblerStatusProvider.notifier).refresh();
+        },
+        icon: const Icon(Icons.hearing_disabled),
+        selectedIcon: const Icon(Icons.hearing),
+        tooltip: isRunning ? 'Stop Stumbling.' : 'Start stumbling.',
+      ),
+      error: (error, stackTrace) => const IconButton.filledTonal(
+        icon: Icon(Icons.error),
+        onPressed: null,
+      ),
+      loading: () => const CircularProgressIndicator(),
     );
   }
 }
@@ -46,7 +91,6 @@ class MyHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(title),
       ),
       body: const Column(
@@ -55,6 +99,14 @@ class MyHomePage extends StatelessWidget {
             child: ReportListView(),
           ),
         ],
+      ),
+      bottomNavigationBar: const BottomAppBar(
+        child: IconTheme(
+          data: IconThemeData(),
+          child: Row(children: [
+            StumblerControlButton(),
+          ]),
+        ),
       ),
     );
   }
@@ -187,7 +239,6 @@ class ReportDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text('Report Details'),
       ),
       body: Column(

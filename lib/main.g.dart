@@ -6,6 +6,22 @@ part of 'main.dart';
 // RiverpodGenerator
 // **************************************************************************
 
+String _$stumblerStatusHash() => r'9ab54c0bbf908fef845a5728e08233f7541d8cad';
+
+/// See also [StumblerStatus].
+@ProviderFor(StumblerStatus)
+final stumblerStatusProvider =
+    AutoDisposeAsyncNotifierProvider<StumblerStatus, bool>.internal(
+  StumblerStatus.new,
+  name: r'stumblerStatusProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$stumblerStatusHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$StumblerStatus = AutoDisposeAsyncNotifier<bool>;
 String _$reportListHash() => r'1f2d21c898d8f75a96a3c5ba1bbee556de1ac968';
 
 /// See also [ReportList].
