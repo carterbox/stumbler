@@ -15,7 +15,6 @@ Future<void> main() async {
   Logger.root.onRecord.listen((record) {
     debugPrint('${record.level.name}: ${record.time}: ${record.message}');
   });
-  // getLocationAndNetworkPermission();
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -28,7 +27,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Mozumbler',
       theme: ThemeData(
-        colorSchemeSeed: Colors.lightGreen,
+        colorSchemeSeed: Colors.green,
         useMaterial3: true,
       ),
       home: const MyHomePage(title: 'Mozumbler'),
@@ -40,44 +39,55 @@ class MyApp extends StatelessWidget {
 class StumblerStatus extends _$StumblerStatus {
   @override
   Future<bool> build() async {
-    // Add a delay because it takes time for the service to start.
-    await Future.delayed(const Duration(seconds: 1));
-    return isMozumberServiceActive();
+    if (await getLocationAndNetworkPermission()) {
+      return isMozumberServiceActive();
+    }
+    return false;
   }
 
-  Future<void> refresh() async {
+  Future<void> toggleService() async {
+    if (await future) {
+      await stopMozumblerService();
+    } else {
+      await startMozumblerService();
+    }
+    await Future.delayed(const Duration(seconds: 1));
     ref.invalidateSelf();
-    await future;
   }
 }
 
 class StumblerControlButton extends ConsumerWidget {
   const StumblerControlButton({super.key});
 
+  final title = const Text('Stumbler Control');
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stumblerStatus = ref.watch(stumblerStatusProvider);
-    if (stumblerStatus.isRefreshing) return const CircularProgressIndicator();
     return stumblerStatus.when(
-      data: (bool isRunning) => IconButton.filledTonal(
-        isSelected: isRunning,
-        onPressed: () {
-          if (isRunning) {
-            stopMozumblerService();
-          } else {
-            startMozumblerService();
-          }
-          ref.read(stumblerStatusProvider.notifier).refresh();
+      data: (bool isRunning) => SwitchListTile.adaptive(
+        value: isRunning,
+        onChanged: (bool newValue) {
+          ref.read(stumblerStatusProvider.notifier).toggleService();
         },
-        icon: const Icon(Icons.hearing_disabled),
-        selectedIcon: const Icon(Icons.hearing),
-        tooltip: isRunning ? 'Stop Stumbling.' : 'Start stumbling.',
+        title: title,
+        subtitle: isRunning
+            ? const Text('The service is active.')
+            : const Text('The service is not active.'),
       ),
-      error: (error, stackTrace) => const IconButton.filledTonal(
-        icon: Icon(Icons.error),
-        onPressed: null,
+      error: (error, stackTrace) => SwitchListTile.adaptive(
+        value: false,
+        onChanged: null,
+        title: title,
+        subtitle: const Text('There was an error with the service.'),
       ),
-      loading: () => const CircularProgressIndicator(),
+      loading: () => SwitchListTile.adaptive(
+        value: false,
+        onChanged: null,
+        title: title,
+        subtitle:
+            const Text('Communication is being established with the service.'),
+      ),
     );
   }
 }
@@ -101,13 +111,26 @@ class MyHomePage extends StatelessWidget {
         ],
       ),
       bottomNavigationBar: const BottomAppBar(
-        child: IconTheme(
-          data: IconThemeData(),
-          child: Row(children: [
-            StumblerControlButton(),
-          ]),
-        ),
+        height: 96,
+        child: StumblerControlButton(),
       ),
+      floatingActionButton: const UploadButton(),
+    );
+  }
+}
+
+class UploadButton extends ConsumerWidget {
+  const UploadButton({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return FloatingActionButton.extended(
+      onPressed: () {
+        debugPrint("Upload button pressed");
+        ref.read(reportListProvider.notifier).upload();
+      },
+      label: const Text('Upload'),
+      icon: const Icon(Icons.upload),
     );
   }
 }
@@ -122,6 +145,12 @@ class ReportList extends _$ReportList {
   Future<void> refresh() async {
     // await insertReport(Report.fromMock());
     // scheduleSingleReport();
+    ref.invalidateSelf();
+    await future;
+  }
+
+  Future<void> upload() async {
+    deleteReport(DateTime.now().millisecondsSinceEpoch);
     ref.invalidateSelf();
     await future;
   }
@@ -270,6 +299,9 @@ class APList extends StatelessWidget {
         isThreeLine: true,
       )),
       itemBuilder: (context, index) {
+        final String age = (accessPoints[index].age == null)
+            ? 'unknown'
+            : (accessPoints[index].age! / 1000).toStringAsFixed(3);
         return Card(
           child: ListTile(
             title: Text((accessPoints[index].ssid != null &&
@@ -277,7 +309,7 @@ class APList extends StatelessWidget {
                 ? accessPoints[index].ssid!
                 : '[Hidden Network]'),
             subtitle: Text(
-                '${accessPoints[index].macAddress}\n${accessPoints[index].age ?? ""}'),
+                '${accessPoints[index].macAddress.toUpperCase()}\n$age seconds'),
             isThreeLine: true,
           ),
         );

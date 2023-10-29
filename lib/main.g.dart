@@ -6,7 +6,7 @@ part of 'main.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$stumblerStatusHash() => r'9ab54c0bbf908fef845a5728e08233f7541d8cad';
+String _$stumblerStatusHash() => r'3848b76f1fb4a790a1420a219f17bdc560caa78f';
 
 /// See also [StumblerStatus].
 @ProviderFor(StumblerStatus)
@@ -22,7 +22,7 @@ final stumblerStatusProvider =
 );
 
 typedef _$StumblerStatus = AutoDisposeAsyncNotifier<bool>;
-String _$reportListHash() => r'1f2d21c898d8f75a96a3c5ba1bbee556de1ac968';
+String _$reportListHash() => r'a9264ebe23ceca650fa71deb320a22cc21c74a3a';
 
 /// See also [ReportList].
 @ProviderFor(ReportList)

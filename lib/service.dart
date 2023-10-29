@@ -1,56 +1,62 @@
-import 'dart:async';
-import 'dart:math';
+// /// Defines the actual stumbling service and logic
+library;
 
-import 'package:location/location.dart';
-import 'package:logging/logging.dart' as logging;
+import 'dart:async';
+
+import 'package:geolocator/geolocator.dart';
+import 'package:flutter/widgets.dart';
 import 'package:mozumbler/geosubmit.dart' as mls;
+import 'package:mozumbler/database.dart';
 import 'package:system_clock/system_clock.dart';
 import 'package:wifi_scan/wifi_scan.dart';
+import 'package:flutter_foreground_service/flutter_foreground_service.dart';
 
-final _logger = logging.Logger('mozumbler.service');
+const generateReportTaskKey = "io.github.carterbox.mozumbler.generateReport";
 
-// this will be used as notification channel id
-const notificationChannelId = 'mozumbler';
+Future<bool> isMozumberServiceActive() async {
+  return ForegroundServiceHandler.foregroundServiceIsStarted();
+}
 
-// this will be used for notification id, So you can update your custom notification with this id.
-const notificationId = 000;
+Future<void> stopMozumblerService() async {
+  debugPrint('Stopping Mozumber service.');
+  await ForegroundServiceHandler.stopForegroundService();
+}
 
-// @pragma('vm:entry-point')
-// Future<void> onStart(ServiceInstance service) async {
-//   // Only available for flutter 3.0.0 and later
-//   DartPluginRegistrant.ensureInitialized();
+Future<void> startMozumblerService() async {
+  debugPrint('Starting Mozumber service.');
+  await ForegroundServiceHandler.notification
+      .setPriority(AndroidNotificationPriority.LOW);
+  await ForegroundServiceHandler.notification.setTitle('WiFi stumbling active');
+  await ForegroundServiceHandler.notification.setText(
+      'The mozumbler service is recording your location and local WiFi broadcasts.');
+  await ForegroundServiceHandler.setServiceIntervalSeconds(30 * 60);
+  await ForegroundServiceHandler.setServiceFunction(generateWifiReport);
+  await ForegroundServiceHandler.startForegroundService();
+}
 
-//   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-//       FlutterLocalNotificationsPlugin();
-
-//   // bring to foreground
-//   Timer.periodic(const Duration(seconds: 6), (timer) async {
-//     if (service is AndroidServiceInstance) {
-//       if (await service.isForegroundService()) {
-//         flutterLocalNotificationsPlugin.show(
-//           notificationId,
-//           'Mozumbler is active',
-//           'Awesome ${DateTime.now()}',
-//           const NotificationDetails(
-//             android: AndroidNotificationDetails(
-//               notificationChannelId,
-//               'MY FOREGROUND SERVICE',
-//               icon: 'ic_bg_service_small',
-//               ongoing: true,
-//             ),
-//           ),
-//         );
-//       }
-//     }
-//   });
+// void scheduleSingleReport() {
+//   debugPrint("Single report scheduled with work manager.");
+//   Workmanager().registerOneOffTask(generateReportTaskKey, generateReportTaskKey,
+//       constraints: Constraints(
+//         networkType: NetworkType.not_required,
+//         requiresBatteryNotLow: true,
+//         requiresDeviceIdle: false,
+//       ));
 // }
 
-Stream<List<WiFiAccessPoint>> streamWifiData() async* {
-  final scanner = WiFiScan.instance;
-  await for (final nearbyWiFi in scanner.onScannedResultsAvailable) {
-    yield nearbyWiFi;
-  }
-}
+// @pragma('vm:entry-point')
+// void callbackDispatcher() {
+//   Workmanager().executeTask((task, inputData) {
+//     DartPluginRegistrant.ensureInitialized();
+//     WidgetsFlutterBinding.ensureInitialized();
+//     print("Native called background task: $task");
+//     switch (task) {
+//       case generateReportTaskKey:
+//         return generateWifiReport();
+//     }
+//     return Future.value(false);
+//   });
+// }
 
 const Map<WiFiStandards, String?> standardMap = {
   WiFiStandards.ac: '802.11ac',
@@ -78,125 +84,169 @@ mls.WifiAccessPoint convertWifiData(
 }
 
 mls.Position convertPositionData(
-  LocationData data,
+  Position data,
   DateTime lastBootDate,
   DateTime reportDate,
 ) {
-  final positionDate = lastBootDate
-      .add(Duration(microseconds: data.elapsedRealtimeNanos! ~/ 1000));
   return mls.Position(
-    latitude: data.latitude!,
-    longitude: data.longitude!,
+    latitude: data.latitude,
+    longitude: data.longitude,
     accuracy: data.accuracy,
     altitude: data.altitude,
+    altitudeAccuracy: data.altitudeAccuracy,
     speed: data.speed,
     heading: data.heading,
     source: 'fused',
-    age: positionDate.difference(reportDate).inMilliseconds,
+    age: data.timestamp?.difference(reportDate).inMilliseconds,
   );
 }
 
-Stream<LocationData?> streamLocationData() async* {
-  final location = Location();
+Future<bool> getLocationAndNetworkPermission() async {
+  final scanner = WiFiScan.instance;
+  if (await scanner.canGetScannedResults(askPermissions: true) !=
+      CanGetScannedResults.yes) {
+    return false;
+  }
+  if (await scanner.canStartScan(askPermissions: true) != CanStartScan.yes) {
+    return false;
+  }
 
   bool serviceEnabled;
-  PermissionStatus permissionGranted;
+  LocationPermission permission;
 
-  serviceEnabled = await location.serviceEnabled();
+  // Test if location services are enabled.
+  serviceEnabled = await Geolocator.isLocationServiceEnabled();
   if (!serviceEnabled) {
-    serviceEnabled = await location.requestService();
-    if (!serviceEnabled) {
-      yield null;
+    // Location services are not enabled don't continue
+    // accessing the position and request users of the
+    // App to enable the location services.
+    return Future.error('Location services are disabled.');
+  }
+
+  permission = await Geolocator.checkPermission();
+  if (permission == LocationPermission.denied) {
+    permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied) {
+      // Permissions are denied, next time you could try
+      // requesting permissions again (this is also where
+      // Android's shouldShowRequestPermissionRationale
+      // returned true. According to Android guidelines
+      // your App should show an explanatory UI now.
+      return Future.error('Location permissions are denied');
     }
   }
 
-  permissionGranted = await location.hasPermission();
-  if (permissionGranted == PermissionStatus.denied) {
-    permissionGranted = await location.requestPermission();
-    if (permissionGranted != PermissionStatus.granted) {
-      yield null;
+  if (permission == LocationPermission.deniedForever) {
+    // Permissions are denied forever, handle appropriately.
+    return Future.error(
+        'Location permissions are permanently denied, we cannot request permissions.');
+  }
+
+  return true;
+}
+
+Future<bool> generateMockReport() async {
+  return insertReport(mls.Report.fromMock());
+}
+
+Future<bool> generateWifiReport() async {
+  await ForegroundServiceHandler.getWakeLock();
+
+  final wirelessService = WiFiScan.instance;
+
+  if (await wirelessService.canGetScannedResults(askPermissions: false) !=
+      CanGetScannedResults.yes) {
+    debugPrint("App does not have permission to get Wifi scan results.");
+  }
+  if (await wirelessService.canStartScan(askPermissions: false) !=
+      CanStartScan.yes) {
+    debugPrint("App does not have permission to start a WiFi scan.");
+  }
+
+  debugPrint("Awaiting Wifi scan result.");
+  if (!await wirelessService.startScan()) {
+    debugPrint("Wifi scan not started.");
+    return false;
+  }
+
+  bool serviceEnabled;
+  LocationPermission permission;
+
+  // Test if location services are enabled.
+  serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  if (!serviceEnabled) {
+    // Location services are not enabled don't continue
+    // accessing the position and request users of the
+    // App to enable the location services.
+    return Future.error('Location services are disabled.');
+  }
+
+  permission = await Geolocator.checkPermission();
+  if (permission == LocationPermission.denied) {
+    permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied) {
+      // Permissions are denied, next time you could try
+      // requesting permissions again (this is also where
+      // Android's shouldShowRequestPermissionRationale
+      // returned true. According to Android guidelines
+      // your App should show an explanatory UI now.
+      return Future.error('Location permissions are denied');
     }
   }
 
-  location.changeSettings(
-    accuracy: LocationAccuracy.high,
-    distanceFilter: 10, // meters
-    interval: 6 * 1000, // milliseconds
+  if (permission == LocationPermission.deniedForever) {
+    // Permissions are denied forever, handle appropriately.
+    return Future.error(
+        'Location permissions are permanently denied, we cannot request permissions.');
+  }
+
+  debugPrint("Awaiting location stream.");
+  final bestPosition = await Geolocator.getCurrentPosition(
+    desiredAccuracy: LocationAccuracy.high,
   );
+  debugPrint("Location is received.");
 
-  await for (final result in location.onLocationChanged) {
-    yield result;
-  }
-}
+  // Wait for the scan to happen, so we get new results instead of old ones
+  // await Future.delayed(const Duration(seconds: 1));
 
-Stream<List<mls.Report>> streamMockWifiReports(ref) async* {
-  List<mls.Report> reports = [];
-  while (true) {
-    await Future.delayed(Duration(seconds: Random().nextInt(90)));
-    reports.add(mls.Report.fromMock());
-    yield reports;
-  }
-}
+  final bestWifi = await wirelessService.onScannedResultsAvailable.first;
+  debugPrint("Wifi scan completed.");
 
-Stream<List<mls.Report>> streamWifiReports(ref) async* {
-  // Setup WiFi Scanner and request permissions
-
-  final scanner = WiFiScan.instance;
-  if (await scanner.canGetScannedResults() != CanGetScannedResults.yes) {
-    yield* Stream.error("Permission to get Wifi Scan results not given.");
-    return;
-  }
-  if (await scanner.canStartScan() != CanStartScan.yes) {
-    yield* Stream.error("Permission to start Wifi Scan not given.");
-    return;
+  if (bestWifi.isEmpty) {
+    debugPrint("No Wifi networks in range.");
+    return false;
   }
 
+  final reportDate = bestPosition.timestamp ?? DateTime.now();
   // When the date when the system was last rebooted. Used to compute dates
   // when WiFi networks were last seen.
   final lastBootDate = DateTime.now().subtract(SystemClock.elapsedRealtime());
-  List<mls.Report> reports = [];
 
-  // Because of background data limits we only get position and WiFi scan
-  // updates a few times per hour. Therefore, we only request a WiFi scan when
-  // we have new position data and we only generate a report if the WiFi scan is
-  // recent.
-  _logger.info("Awaiting location stream.");
-  await for (final bestPosition in streamLocationData()) {
-    _logger.info("Location is received.");
-    if (bestPosition == null) {
-      yield* Stream.error("Permission to see location not given.");
-      return;
-    }
-    await scanner.startScan();
-    _logger.info("Awaiting Wifi scan result.");
-    final bestWifi = await scanner.getScannedResults();
-    _logger.info("Wifi scan completed.");
-    if (bestWifi.isNotEmpty) {
-      final positionDate = lastBootDate.add(
-          Duration(microseconds: bestPosition.elapsedRealtimeNanos! ~/ 1000));
-      final wifiDate =
-          lastBootDate.add(Duration(microseconds: bestWifi[0].timestamp!));
+  int tooOld = const Duration(minutes: 1).inMilliseconds;
 
-      const tooOld = Duration(seconds: 30);
-      if (positionDate.difference(wifiDate).abs() < tooOld) {
-        _logger
-            .info("Wifi scan from within the last $tooOld; creating a report.");
-        final reportDate = DateTime.now();
-        reports.add(mls.Report(
-          timestamp: reportDate.millisecondsSinceEpoch,
-          position: convertPositionData(bestPosition, lastBootDate, reportDate),
-          wifiAccessPoints: bestWifi
-              .map((e) => convertWifiData(e, lastBootDate, reportDate))
-              .where((e) => (e.ssid != null &&
-                  e.ssid!.isNotEmpty &&
-                  !e.ssid!.endsWith('_nomap')))
-              .toList(),
-        ));
-        yield reports;
-      } else {
-        _logger.info("Wifi scan is older than the last $tooOld.");
-      }
-    }
-    _logger.info("Awaiting location stream.");
+  final report = mls.Report(
+    timestamp: reportDate.millisecondsSinceEpoch,
+    position: convertPositionData(
+      bestPosition,
+      lastBootDate,
+      reportDate,
+    ),
+    wifiAccessPoints: bestWifi
+        .map((e) => convertWifiData(e, lastBootDate, reportDate))
+        .where((e) => (e.ssid != null &&
+            e.ssid!.isNotEmpty &&
+            !e.ssid!.endsWith('_nomap')))
+        .where((e) => (e.age != null) && (e.age!.abs() <= tooOld))
+        .toList(),
+  );
+
+  if (report.wifiAccessPoints.isEmpty) {
+    debugPrint("Wifi scan has no valid observations.");
+    return false;
   }
+
+  await insertReport(report);
+
+  ForegroundServiceHandler.releaseWakeLock();
+  return true;
 }
