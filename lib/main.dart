@@ -291,6 +291,9 @@ class ReportDetailPage extends StatelessWidget {
       ),
       body: Column(
         children: [
+          PositionDetail(
+            position: report.position,
+          ),
           Expanded(
             child: APList(
               accessPoints: report.wifiAccessPoints,
@@ -302,36 +305,62 @@ class ReportDetailPage extends StatelessWidget {
   }
 }
 
-// @override
-// void initState() {
-//   super.initState();
-//   controller = MapController.withPosition(
-//     initPosition: GeoPoint(
-//       latitude: widget.location.latitude,
-//       longitude: widget.location.longitude,
-//     ),
-//   );
-// }
+class PositionDetail extends StatefulWidget {
+  const PositionDetail({super.key, required this.position});
 
-// OSMFlutter(
-//             controller: controller,
-//             osmOption: OSMOption(
-//               showZoomController: false,
-//               isPicker: false,
-//               enableRotationByGesture: false,
-//               showContributorBadgeForOSM: false,
-//               zoomOption: ZoomOption(
-//                 initZoom: widget.zoomLevel,
-//                 minZoomLevel: widget.zoomLevel,
-//                 maxZoomLevel: widget.zoomLevel,
-//               ),
-//             ),
+  final Position position;
+  final zoomLevel = 19.0;
 
-// @override
-// void dispose() {
-//   controller.dispose();
-//   super.dispose();
-// }
+  @override
+  State<PositionDetail> createState() => _PositionDetailState();
+}
+
+class _PositionDetailState extends State<PositionDetail> {
+  late final MapController controller;
+  late final GeoPoint center;
+
+  @override
+  void initState() {
+    super.initState();
+    center = GeoPoint(
+      latitude: widget.position.latitude,
+      longitude: widget.position.longitude,
+    );
+    controller = MapController.withPosition(
+      initPosition: center,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 1.618,
+      child: OSMFlutter(
+        controller: controller,
+        osmOption: OSMOption(
+            showZoomController: false,
+            isPicker: false,
+            enableRotationByGesture: false,
+            showContributorBadgeForOSM: true,
+            zoomOption: ZoomOption(
+              initZoom: widget.zoomLevel,
+              minZoomLevel: widget.zoomLevel,
+              maxZoomLevel: widget.zoomLevel,
+            ),
+            staticPoints: [
+              StaticPositionGeoPoint('', null, [center])
+            ]),
+        mapIsLoading: const Center(child: CircularProgressIndicator()),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+}
 
 /// A [ListView] of [Card] each representing an [WifiAccessPoint]
 class APList extends StatelessWidget {
@@ -343,26 +372,24 @@ class APList extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.builder(
       itemCount: accessPoints.length,
-      prototypeItem: const Card(
-          child: ListTile(
+      prototypeItem: const ListTile(
         title: Text("Some SSID"),
         subtitle: Text("00:00:00:00"),
-        isThreeLine: true,
-      )),
+        trailing: Text('0 s'),
+        isThreeLine: false,
+      ),
       itemBuilder: (context, index) {
         final String age = (accessPoints[index].age == null)
             ? 'unknown'
             : (accessPoints[index].age! / 1000).toStringAsFixed(3);
-        return Card(
-          child: ListTile(
-            title: Text((accessPoints[index].ssid != null &&
-                    accessPoints[index].ssid!.isNotEmpty)
-                ? accessPoints[index].ssid!
-                : '[Hidden Network]'),
-            subtitle: Text(
-                '${accessPoints[index].macAddress.toUpperCase()}\n$age seconds'),
-            isThreeLine: true,
-          ),
+        return ListTile(
+          title: Text((accessPoints[index].ssid != null &&
+                  accessPoints[index].ssid!.isNotEmpty)
+              ? accessPoints[index].ssid!
+              : '[Hidden Network]'),
+          subtitle: Text(accessPoints[index].macAddress.toUpperCase()),
+          trailing: Text('$age s'),
+          isThreeLine: false,
         );
       },
     );
