@@ -4,6 +4,15 @@ description: A new WIFI stumbler for the Mozilla Location Service.
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
+repository: https://github.com/carterbox/stumbler
+
+platforms:
+  android:
+
+topics:
+  - wifi
+  - location
+  - map
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
 # followed by an optional build number separated by a +.
