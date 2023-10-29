@@ -2,9 +2,9 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import 'package:mozumbler/database.dart';
-import 'package:mozumbler/geosubmit.dart';
-import 'package:mozumbler/service.dart';
+import 'package:stumbler/database.dart';
+import 'package:stumbler/geosubmit.dart';
+import 'package:stumbler/service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 // Code generator for riverpod must be running by calling
@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
     return DynamicColorBuilder(
       builder: (lightDynamic, darkDynamic) {
         return MaterialApp(
-          title: 'Mozumbler',
+          title: 'Stumbler',
           theme: ThemeData(
             brightness: Brightness.light,
             colorScheme: lightDynamic,
@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
             useMaterial3: true,
           ),
           themeMode: ThemeMode.system,
-          home: const MyHomePage(title: 'Mozumbler'),
+          home: const MyHomePage(title: 'Stumbler'),
         );
       },
     );
@@ -59,9 +59,9 @@ class StumblerStatus extends _$StumblerStatus {
 
   Future<void> toggleService() async {
     if (await future) {
-      await stopMozumblerService();
+      await stopStumblerService();
     } else {
-      await startMozumblerService();
+      await startStumblerService();
     }
     await Future.delayed(const Duration(seconds: 1));
     ref.invalidateSelf();
