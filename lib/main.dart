@@ -5,6 +5,7 @@ import 'package:mozumbler/geosubmit.dart';
 import 'package:mozumbler/service.dart';
 import 'package:mozumbler/database.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 
 // Code generator for riverpod must be running by calling
 //`dart run build_runner watch`; it puts code into this file.
@@ -119,7 +120,6 @@ class MyHomePage extends StatelessWidget {
     );
   }
 }
-
 
 /// A [FloatingActionButton] that triggers uploading the collected [Report]
 class UploadButton extends ConsumerWidget {
@@ -237,7 +237,7 @@ class ReportListItem extends StatelessWidget {
 }
 
 /// A [ListTile] showing a summary of [Position] and a timestamp
-class LocationListTile extends StatelessWidget {
+class LocationListTile extends StatefulWidget {
   const LocationListTile({
     super.key,
     required this.location,
@@ -246,22 +246,68 @@ class LocationListTile extends StatelessWidget {
 
   final Position location;
   final int timestamp;
+  final double zoomLevel = 19;
+
+  @override
+  State<LocationListTile> createState() => _LocationListTileState();
+}
+
+class _LocationListTileState extends State<LocationListTile> {
+  late final MapController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = MapController.withPosition(
+      initPosition: GeoPoint(
+        latitude: widget.location.latitude,
+        longitude: widget.location.longitude,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     String locationName = 'Nowhere';
-    final String date =
-        DateTime.fromMillisecondsSinceEpoch(timestamp + (location.age ?? 0))
-            .toString();
+    final String date = DateTime.fromMillisecondsSinceEpoch(
+            widget.timestamp + (widget.location.age ?? 0))
+        .toString();
 
-    locationName = ('${location.latitude.toStringAsFixed(2)}, '
-        '${location.longitude.toStringAsFixed(2)}');
+    locationName = ('${widget.location.latitude.toStringAsFixed(2)}, '
+        '${widget.location.longitude.toStringAsFixed(2)}');
 
-    return ListTile(
-      title: Text(locationName),
-      subtitle: Text(date),
-      isThreeLine: false,
+    return Column(
+      children: [
+        AspectRatio(
+          aspectRatio: 1.618,
+          child: OSMFlutter(
+            controller: controller,
+            osmOption: OSMOption(
+              showZoomController: false,
+              isPicker: false,
+              enableRotationByGesture: false,
+              showContributorBadgeForOSM: false,
+              zoomOption: ZoomOption(
+                initZoom: widget.zoomLevel,
+                minZoomLevel: widget.zoomLevel,
+                maxZoomLevel: widget.zoomLevel,
+              ),
+            ),
+          ),
+        ),
+        ListTile(
+          title: Text(locationName),
+          subtitle: Text(date),
+          isThreeLine: false,
+        ),
+      ],
     );
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 }
 
