@@ -1,9 +1,10 @@
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
+import 'package:mozumbler/database.dart';
 import 'package:mozumbler/geosubmit.dart';
 import 'package:mozumbler/service.dart';
-import 'package:mozumbler/database.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 // Code generator for riverpod must be running by calling
@@ -24,13 +25,24 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Mozumbler',
-      theme: ThemeData(
-        colorSchemeSeed: Colors.green,
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Mozumbler'),
+    return DynamicColorBuilder(
+      builder: (lightDynamic, darkDynamic) {
+        return MaterialApp(
+          title: 'Mozumbler',
+          theme: ThemeData(
+            brightness: Brightness.light,
+            colorScheme: lightDynamic,
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            brightness: Brightness.dark,
+            colorScheme: darkDynamic,
+            useMaterial3: true,
+          ),
+          themeMode: ThemeMode.system,
+          home: const MyHomePage(title: 'Mozumbler'),
+        );
+      },
     );
   }
 }
@@ -119,7 +131,6 @@ class MyHomePage extends StatelessWidget {
     );
   }
 }
-
 
 /// A [FloatingActionButton] that triggers uploading the collected [Report]
 class UploadButton extends ConsumerWidget {
@@ -257,10 +268,18 @@ class LocationListTile extends StatelessWidget {
     locationName = ('${location.latitude.toStringAsFixed(2)}, '
         '${location.longitude.toStringAsFixed(2)}');
 
-    return ListTile(
-      title: Text(locationName),
-      subtitle: Text(date),
-      isThreeLine: false,
+    return Column(
+      children: [
+        AspectRatio(
+          aspectRatio: 1.618,
+          child: Placeholder(),
+        ),
+        ListTile(
+          title: Text(locationName),
+          subtitle: Text(date),
+          isThreeLine: false,
+        ),
+      ],
     );
   }
 }
