@@ -56,6 +56,7 @@ class StumblerStatus extends _$StumblerStatus {
   }
 }
 
+/// A [SwitchListTile] which controls whether the Stumber service is running
 class StumblerControlButton extends ConsumerWidget {
   const StumblerControlButton({super.key});
 
@@ -119,6 +120,8 @@ class MyHomePage extends StatelessWidget {
   }
 }
 
+
+/// A [FloatingActionButton] that triggers uploading the collected [Report]
 class UploadButton extends ConsumerWidget {
   const UploadButton({super.key});
 
@@ -156,6 +159,7 @@ class ReportList extends _$ReportList {
   }
 }
 
+/// [ListView] of [Report]. Tapping a [Report]'s [ListTile] opens a summary page.
 class ReportListView extends ConsumerWidget {
   const ReportListView({super.key});
 
@@ -202,6 +206,7 @@ class ReportListView extends ConsumerWidget {
   }
 }
 
+/// An [InkWell] wrapped [ListTile] which opens a [ReportDetailPage]
 class ReportListItem extends StatelessWidget {
   const ReportListItem({super.key, required this.report});
 
@@ -231,6 +236,7 @@ class ReportListItem extends StatelessWidget {
   }
 }
 
+/// A [ListTile] showing a summary of [Position] and a timestamp
 class LocationListTile extends StatelessWidget {
   const LocationListTile({
     super.key,
@@ -259,6 +265,7 @@ class LocationListTile extends StatelessWidget {
   }
 }
 
+/// A [Scaffold] showing the details of a [Report]
 class ReportDetailPage extends StatelessWidget {
   const ReportDetailPage({super.key, required this.report});
 
@@ -283,6 +290,7 @@ class ReportDetailPage extends StatelessWidget {
   }
 }
 
+/// A [ListView] of [Card] each representing an [WifiAccessPoint]
 class APList extends StatelessWidget {
   const APList({super.key, required this.accessPoints});
 
