@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:mozumbler/geosubmit.dart';
+import 'package:stumbler/geosubmit.dart';
 
 void main() {
   test('Convert Reports to Json and back.', () async {

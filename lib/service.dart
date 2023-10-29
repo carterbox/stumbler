@@ -5,30 +5,30 @@ import 'dart:async';
 
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/widgets.dart';
-import 'package:mozumbler/geosubmit.dart' as mls;
-import 'package:mozumbler/database.dart';
+import 'package:stumbler/geosubmit.dart' as mls;
+import 'package:stumbler/database.dart';
 import 'package:system_clock/system_clock.dart';
 import 'package:wifi_scan/wifi_scan.dart';
 import 'package:flutter_foreground_service/flutter_foreground_service.dart';
 
-const generateReportTaskKey = "io.github.carterbox.mozumbler.generateReport";
+const generateReportTaskKey = "io.github.carterbox.stumbler.generateReport";
 
 Future<bool> isMozumberServiceActive() async {
   return ForegroundServiceHandler.foregroundServiceIsStarted();
 }
 
-Future<void> stopMozumblerService() async {
+Future<void> stopStumblerService() async {
   debugPrint('Stopping Mozumber service.');
   await ForegroundServiceHandler.stopForegroundService();
 }
 
-Future<void> startMozumblerService() async {
+Future<void> startStumblerService() async {
   debugPrint('Starting Mozumber service.');
   await ForegroundServiceHandler.notification
       .setPriority(AndroidNotificationPriority.LOW);
   await ForegroundServiceHandler.notification.setTitle('WiFi stumbling active');
   await ForegroundServiceHandler.notification.setText(
-      'The mozumbler service is recording your location and local WiFi broadcasts.');
+      'The stumbler service is recording your location and local WiFi broadcasts.');
   await ForegroundServiceHandler.setServiceIntervalSeconds(30 * 60);
   await ForegroundServiceHandler.setServiceFunction(generateWifiReport);
   await ForegroundServiceHandler.startForegroundService();

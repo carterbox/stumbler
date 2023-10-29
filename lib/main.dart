@@ -1,9 +1,10 @@
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import 'package:mozumbler/geosubmit.dart';
-import 'package:mozumbler/service.dart';
-import 'package:mozumbler/database.dart';
+import 'package:stumbler/database.dart';
+import 'package:stumbler/geosubmit.dart';
+import 'package:stumbler/service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 
@@ -25,13 +26,24 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Mozumbler',
-      theme: ThemeData(
-        colorSchemeSeed: Colors.green,
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Mozumbler'),
+    return DynamicColorBuilder(
+      builder: (lightDynamic, darkDynamic) {
+        return MaterialApp(
+          title: 'Stumbler',
+          theme: ThemeData(
+            brightness: Brightness.light,
+            colorScheme: lightDynamic,
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            brightness: Brightness.dark,
+            colorScheme: darkDynamic,
+            useMaterial3: true,
+          ),
+          themeMode: ThemeMode.system,
+          home: const MyHomePage(title: 'Stumbler'),
+        );
+      },
     );
   }
 }
@@ -48,9 +60,9 @@ class StumblerStatus extends _$StumblerStatus {
 
   Future<void> toggleService() async {
     if (await future) {
-      await stopMozumblerService();
+      await stopStumblerService();
     } else {
-      await startMozumblerService();
+      await startStumblerService();
     }
     await Future.delayed(const Duration(seconds: 1));
     ref.invalidateSelf();
@@ -237,7 +249,7 @@ class ReportListItem extends StatelessWidget {
 }
 
 /// A [ListTile] showing a summary of [Position] and a timestamp
-class LocationListTile extends StatefulWidget {
+class LocationListTile extends StatelessWidget {
   const LocationListTile({
     super.key,
     required this.location,
@@ -246,68 +258,22 @@ class LocationListTile extends StatefulWidget {
 
   final Position location;
   final int timestamp;
-  final double zoomLevel = 19;
-
-  @override
-  State<LocationListTile> createState() => _LocationListTileState();
-}
-
-class _LocationListTileState extends State<LocationListTile> {
-  late final MapController controller;
-
-  @override
-  void initState() {
-    super.initState();
-    controller = MapController.withPosition(
-      initPosition: GeoPoint(
-        latitude: widget.location.latitude,
-        longitude: widget.location.longitude,
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     String locationName = 'Nowhere';
-    final String date = DateTime.fromMillisecondsSinceEpoch(
-            widget.timestamp + (widget.location.age ?? 0))
-        .toString();
+    final String date =
+        DateTime.fromMillisecondsSinceEpoch(timestamp + (location.age ?? 0))
+            .toString();
 
-    locationName = ('${widget.location.latitude.toStringAsFixed(2)}, '
-        '${widget.location.longitude.toStringAsFixed(2)}');
+    locationName = ('${location.latitude.toStringAsFixed(2)}, '
+        '${location.longitude.toStringAsFixed(2)}');
 
-    return Column(
-      children: [
-        AspectRatio(
-          aspectRatio: 1.618,
-          child: OSMFlutter(
-            controller: controller,
-            osmOption: OSMOption(
-              showZoomController: false,
-              isPicker: false,
-              enableRotationByGesture: false,
-              showContributorBadgeForOSM: false,
-              zoomOption: ZoomOption(
-                initZoom: widget.zoomLevel,
-                minZoomLevel: widget.zoomLevel,
-                maxZoomLevel: widget.zoomLevel,
-              ),
-            ),
-          ),
-        ),
-        ListTile(
-          title: Text(locationName),
-          subtitle: Text(date),
-          isThreeLine: false,
-        ),
-      ],
+    return ListTile(
+      title: Text(locationName),
+      subtitle: Text(date),
+      isThreeLine: false,
     );
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
   }
 }
 
@@ -335,6 +301,37 @@ class ReportDetailPage extends StatelessWidget {
     );
   }
 }
+
+// @override
+// void initState() {
+//   super.initState();
+//   controller = MapController.withPosition(
+//     initPosition: GeoPoint(
+//       latitude: widget.location.latitude,
+//       longitude: widget.location.longitude,
+//     ),
+//   );
+// }
+
+// OSMFlutter(
+//             controller: controller,
+//             osmOption: OSMOption(
+//               showZoomController: false,
+//               isPicker: false,
+//               enableRotationByGesture: false,
+//               showContributorBadgeForOSM: false,
+//               zoomOption: ZoomOption(
+//                 initZoom: widget.zoomLevel,
+//                 minZoomLevel: widget.zoomLevel,
+//                 maxZoomLevel: widget.zoomLevel,
+//               ),
+//             ),
+
+// @override
+// void dispose() {
+//   controller.dispose();
+//   super.dispose();
+// }
 
 /// A [ListView] of [Card] each representing an [WifiAccessPoint]
 class APList extends StatelessWidget {
