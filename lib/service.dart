@@ -1,15 +1,32 @@
-// /// Defines the actual stumbling service and logic
+// Stumbler
+// Copyright (C) 2023 Daniel Ching
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+/// Defines the actual stumbling service and logic
 library;
 
 import 'dart:async';
 
-import 'package:geolocator/geolocator.dart';
+import 'package:flutter_foreground_service/flutter_foreground_service.dart';
 import 'package:flutter/widgets.dart';
-import 'package:stumbler/geosubmit.dart' as mls;
+import 'package:geolocator/geolocator.dart';
 import 'package:stumbler/database.dart';
+import 'package:stumbler/geosubmit.dart' as mls;
 import 'package:system_clock/system_clock.dart';
 import 'package:wifi_scan/wifi_scan.dart';
-import 'package:flutter_foreground_service/flutter_foreground_service.dart';
 
 const generateReportTaskKey = "io.github.carterbox.stumbler.generateReport";
 

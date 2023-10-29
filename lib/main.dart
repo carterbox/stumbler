@@ -1,12 +1,29 @@
+// Stumbler
+// Copyright (C) 2023 Daniel Ching
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 3 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stumbler/database.dart';
 import 'package:stumbler/geosubmit.dart';
 import 'package:stumbler/service.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 
 // Code generator for riverpod must be running by calling
 //`dart run build_runner watch`; it puts code into this file.

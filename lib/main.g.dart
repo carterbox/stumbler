@@ -6,7 +6,7 @@ part of 'main.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$stumblerStatusHash() => r'3848b76f1fb4a790a1420a219f17bdc560caa78f';
+String _$stumblerStatusHash() => r'dfc52daa79d9f58acc7c1144696ad76b801ddd23';
 
 /// See also [StumblerStatus].
 @ProviderFor(StumblerStatus)
