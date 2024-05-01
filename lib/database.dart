@@ -63,26 +63,25 @@ LazyDatabase _openConnection() {
 }
 
 /// Store observations in a local database
-Future<bool> insertReport(Report report) async {
-  final database = ReportDatabase();
-  await database.into(database.reportTable).insert(ReportTableCompanion(
-        timestamp: Value(report.timestamp),
-        position: Value(jsonEncode(report.position)),
-        wifiAccessPoints: Value(jsonEncode(report.wifiAccessPoints)),
-      ));
-  await database.close();
+Future<bool> insertReport(ReportDatabase database, Report report) async {
+  await database.into(database.reportTable).insert(
+        ReportTableCompanion(
+          timestamp: Value(report.timestamp),
+          position: Value(jsonEncode(report.position)),
+          wifiAccessPoints: Value(jsonEncode(report.wifiAccessPoints)),
+        ),
+        onConflict: DoNothing(),
+      );
   return true;
 }
 
 /// Get all of the reports from the database
-Future<List<Report>> fetchReports() async {
-  final database = ReportDatabase();
+Future<List<Report>> fetchReports(ReportDatabase database) async {
   final reports = await (database.select(database.reportTable)
         ..orderBy([
           (t) => OrderingTerm(expression: t.timestamp, mode: OrderingMode.desc)
         ]))
       .get();
-  await database.close();
   return reports
       .map<Report>((e) => Report(
             timestamp: e.timestamp,
@@ -95,10 +94,8 @@ Future<List<Report>> fetchReports() async {
 }
 
 /// Remove a report from the database
-Future<void> deleteReport(int timestamp) async {
-  final database = ReportDatabase();
+Future<void> deleteReport(ReportDatabase database, int timestamp) async {
   await (database.delete(database.reportTable)
         ..where((t) => t.timestamp.isSmallerThanValue(timestamp)))
       .go();
-  await database.close();
 }

@@ -65,64 +65,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-@riverpod
-class StumblerStatus extends _$StumblerStatus {
-  @override
-  Future<bool> build() async {
-    if (await getLocationAndNetworkPermission()) {
-      return isMozumberServiceActive();
-    }
-    return false;
-  }
-
-  Future<void> toggleService() async {
-    if (await future) {
-      await stopStumblerService();
-    } else {
-      await startStumblerService();
-    }
-    await Future.delayed(const Duration(seconds: 1));
-    ref.invalidateSelf();
-  }
-}
-
-/// A [SwitchListTile] which controls whether the Stumber service is running
-class StumblerControlButton extends ConsumerWidget {
-  const StumblerControlButton({super.key});
-
-  final title = const Text('Stumbler Control');
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final stumblerStatus = ref.watch(stumblerStatusProvider);
-    return stumblerStatus.when(
-      data: (bool isRunning) => SwitchListTile.adaptive(
-        value: isRunning,
-        onChanged: (bool newValue) {
-          ref.read(stumblerStatusProvider.notifier).toggleService();
-        },
-        title: title,
-        subtitle: isRunning
-            ? const Text('The service is active.')
-            : const Text('The service is not active.'),
-      ),
-      error: (error, stackTrace) => SwitchListTile.adaptive(
-        value: false,
-        onChanged: null,
-        title: title,
-        subtitle: const Text('There was an error with the service.'),
-      ),
-      loading: () => SwitchListTile.adaptive(
-        value: false,
-        onChanged: null,
-        title: title,
-        subtitle:
-            const Text('Communication is being established with the service.'),
-      ),
-    );
-  }
-}
-
 class MyHomePage extends StatelessWidget {
   const MyHomePage({super.key, required this.title});
 
@@ -141,11 +83,17 @@ class MyHomePage extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: const BottomAppBar(
-        height: 96,
-        child: StumblerControlButton(),
+      floatingActionButton: const Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          UploadButton(),
+          SizedBox(
+            height: 8,
+          ),
+          StumbleButton(),
+        ],
       ),
-      floatingActionButton: const UploadButton(),
     );
   }
 }
@@ -156,22 +104,53 @@ class UploadButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return FloatingActionButton.extended(
+    return FloatingActionButton(
       onPressed: () {
         debugPrint("Upload button pressed");
-        ref.read(reportListProvider.notifier).upload();
+        ref
+            .read(reportListProvider.notifier)
+            .upload(ref.read(databaseProvider));
       },
-      label: const Text('Upload'),
-      icon: const Icon(Icons.upload),
+      tooltip: 'Upload scans to MLS',
+      heroTag: 'upload',
+      child: const Icon(Icons.upload),
     );
   }
+}
+
+/// A [FloatingActionButton] that triggers uploading the collected [Report]
+class StumbleButton extends ConsumerWidget {
+  const StumbleButton({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return FloatingActionButton.large(
+      onPressed: () {
+        debugPrint("Scan button pressed");
+        ref.read(reportListProvider.notifier).scan(ref.read(databaseProvider));
+      },
+      tooltip: 'Start a WiFi scan',
+      heroTag: 'stumble',
+      child: const Icon(Icons.wifi_find),
+    );
+  }
+}
+
+@riverpod
+ReportDatabase database(DatabaseRef ref) {
+  final database = ReportDatabase();
+  ref.onDispose(() async {
+    await database.close();
+  });
+  return database;
 }
 
 @riverpod
 class ReportList extends _$ReportList {
   @override
   Future<List<Report>> build() async {
-    return fetchReports();
+    final database = ref.watch(databaseProvider);
+    return fetchReports(database);
   }
 
   Future<void> refresh() async {
@@ -181,9 +160,16 @@ class ReportList extends _$ReportList {
     await future;
   }
 
-  Future<void> upload() async {
-    deleteReport(DateTime.now().millisecondsSinceEpoch);
+  Future<void> upload(ReportDatabase database) async {
+    deleteReport(database, DateTime.now().millisecondsSinceEpoch);
     ref.invalidateSelf();
+    await future;
+  }
+
+  Future<void> scan(ReportDatabase database) async {
+    if (await generateWifiReport(database)) {
+      ref.invalidateSelf();
+    }
     await future;
   }
 }

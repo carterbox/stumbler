@@ -20,60 +20,12 @@ library;
 
 import 'dart:async';
 
-import 'package:flutter_foreground_service/flutter_foreground_service.dart';
 import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:stumbler/database.dart';
 import 'package:stumbler/geosubmit.dart' as mls;
 import 'package:system_clock/system_clock.dart';
 import 'package:wifi_scan/wifi_scan.dart';
-
-const generateReportTaskKey = "io.github.carterbox.stumbler.generateReport";
-
-Future<bool> isMozumberServiceActive() async {
-  return ForegroundServiceHandler.foregroundServiceIsStarted();
-}
-
-Future<void> stopStumblerService() async {
-  debugPrint('Stopping Mozumber service.');
-  await ForegroundServiceHandler.stopForegroundService();
-}
-
-Future<void> startStumblerService() async {
-  debugPrint('Starting Mozumber service.');
-  await ForegroundServiceHandler.notification
-      .setPriority(AndroidNotificationPriority.LOW);
-  await ForegroundServiceHandler.notification.setTitle('WiFi stumbling active');
-  await ForegroundServiceHandler.notification.setText(
-      'The stumbler service is recording your location and local WiFi broadcasts.');
-  await ForegroundServiceHandler.setServiceIntervalSeconds(30 * 60);
-  await ForegroundServiceHandler.setServiceFunction(generateWifiReport);
-  await ForegroundServiceHandler.startForegroundService();
-}
-
-// void scheduleSingleReport() {
-//   debugPrint("Single report scheduled with work manager.");
-//   Workmanager().registerOneOffTask(generateReportTaskKey, generateReportTaskKey,
-//       constraints: Constraints(
-//         networkType: NetworkType.not_required,
-//         requiresBatteryNotLow: true,
-//         requiresDeviceIdle: false,
-//       ));
-// }
-
-// @pragma('vm:entry-point')
-// void callbackDispatcher() {
-//   Workmanager().executeTask((task, inputData) {
-//     DartPluginRegistrant.ensureInitialized();
-//     WidgetsFlutterBinding.ensureInitialized();
-//     print("Native called background task: $task");
-//     switch (task) {
-//       case generateReportTaskKey:
-//         return generateWifiReport();
-//     }
-//     return Future.value(false);
-//   });
-// }
 
 const Map<WiFiStandards, String?> standardMap = {
   WiFiStandards.ac: '802.11ac',
@@ -162,20 +114,18 @@ Future<bool> getLocationAndNetworkPermission() async {
   return true;
 }
 
-Future<bool> generateMockReport() async {
-  return insertReport(mls.Report.fromMock());
+Future<bool> generateMockReport(ReportDatabase database) async {
+  return insertReport(database, mls.Report.fromMock());
 }
 
-Future<bool> generateWifiReport() async {
-  await ForegroundServiceHandler.getWakeLock();
-
+Future<bool> generateWifiReport(ReportDatabase database) async {
   final wirelessService = WiFiScan.instance;
 
-  if (await wirelessService.canGetScannedResults(askPermissions: false) !=
+  if (await wirelessService.canGetScannedResults(askPermissions: true) !=
       CanGetScannedResults.yes) {
     debugPrint("App does not have permission to get Wifi scan results.");
   }
-  if (await wirelessService.canStartScan(askPermissions: false) !=
+  if (await wirelessService.canStartScan(askPermissions: true) !=
       CanStartScan.yes) {
     debugPrint("App does not have permission to start a WiFi scan.");
   }
@@ -262,8 +212,5 @@ Future<bool> generateWifiReport() async {
     return false;
   }
 
-  await insertReport(report);
-
-  ForegroundServiceHandler.releaseWakeLock();
-  return true;
+  return insertReport(database, report);
 }

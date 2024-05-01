@@ -51,7 +51,6 @@ dependencies:
   path_provider: ^2.1.1
   path: ^1.8.3
   sqlite3_flutter_libs: ^0.5.17
-  flutter_foreground_service: ^0.4.1
   geolocator: ^10.1.0
   flutter_osm_plugin: ^0.60.5
   dynamic_color: ^1.6.8
