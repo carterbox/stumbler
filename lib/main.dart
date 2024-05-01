@@ -83,17 +83,18 @@ class MyHomePage extends StatelessWidget {
           ),
         ],
       ),
-      floatingActionButton: const Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          UploadButton(),
-          SizedBox(
-            height: 8,
-          ),
-          StumbleButton(),
-        ],
-      ),
+      floatingActionButton: const UploadButton(),
+      // Column(
+      //   mainAxisAlignment: MainAxisAlignment.end,
+      //   crossAxisAlignment: CrossAxisAlignment.end,
+      //   children: [
+
+      //     // SizedBox(
+      //     //   height: 8,
+      //     // ),
+      //     // StumbleButton(),
+      //   ],
+      // ),
     );
   }
 }
@@ -104,7 +105,7 @@ class UploadButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return FloatingActionButton(
+    return FloatingActionButton.large(
       onPressed: () {
         debugPrint("Upload button pressed");
         ref
@@ -195,7 +196,10 @@ class ReportListView extends ConsumerWidget {
       data: (List<Report> reports) {
         return RefreshIndicator(
           onRefresh: () async {
-            await ref.read(reportListProvider.notifier).refresh();
+            debugPrint("Scan list refreshed");
+            await ref
+                .read(reportListProvider.notifier)
+                .scan(ref.read(databaseProvider));
           },
           child: reports.isNotEmpty
               ? ListView.builder(
@@ -210,7 +214,7 @@ class ReportListView extends ConsumerWidget {
                     Card(
                       child: ListTile(
                         leading: Icon(Icons.search_off),
-                        title: Text("No reports available."),
+                        title: Text("No reports; pull down to scan."),
                       ),
                     ),
                   ],
