@@ -162,6 +162,7 @@ class ReportList extends _$ReportList {
   }
 
   Future<void> upload(ReportDatabase database) async {
+    submitReports(await fetchReports(database));
     deleteReport(database, DateTime.now().millisecondsSinceEpoch);
     ref.invalidateSelf();
     await future;

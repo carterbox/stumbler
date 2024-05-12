@@ -28,9 +28,10 @@ import 'package:logging/logging.dart';
 final log = Logger('geosubmit');
 
 /// Submit a report to the location service anonymously over https
-void submitReport(Report report) async {
-  final url = Uri.https('location.services.mozilla.com', 'v2/geosubmit');
-  final response = await http.post(url, body: jsonEncode(report));
+void submitReports(List<Report> reports) async {
+  final url = Uri.https('location.services.mozilla.com', '/v2/geosubmit');
+  final reportsJson = jsonEncode(reports.map((e) => e.toValid()).toList());
+  final response = await http.post(url, body: reportsJson);
   log.info('geosubmit response status: ${response.statusCode}');
   log.fine('geosubmit response body:   ${response.body}');
 }

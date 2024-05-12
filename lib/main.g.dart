@@ -20,7 +20,7 @@ final databaseProvider = AutoDisposeProvider<ReportDatabase>.internal(
 );
 
 typedef DatabaseRef = AutoDisposeProviderRef<ReportDatabase>;
-String _$reportListHash() => r'41d23504ab634f6ab0de9be488deea021ea3fb7d';
+String _$reportListHash() => r'f5f72568d9040bad14bb7c1a405950a489bdfecb';
 
 /// See also [ReportList].
 @ProviderFor(ReportList)
