@@ -1,5 +1,8 @@
 # Stumbler
 
+> [!NOTE]
+> This project is now archived because the Mozilla Location Service (MLS) is retired. I started working on it before the formal announcement that MLS would shutdown and was putting on the finishing touches when MLS stopped accepting new data. I guess I should have done more reading of the news, because apparently there was some drama bout Mozilla being sued for patent infringement over this service?
+
 A new WIFI stumbler for the Mozilla Location Service.
 
 ## TL;DR
